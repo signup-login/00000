@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Account Overview</title>
+    <style>
+        /* General Reset */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* Body Styling */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #0a2740;
+            color: #ffcc00;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            text-align: center;
+            flex-direction: column;
+        }
+
+        /* Dashboard Container */
+        .dashboard {
+            width: 90%;
+            max-width: 800px;
+            padding: 20px;
+            background: #092135;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.7);
+        }
+
+        /* Two Columns Layout */
+        .overview {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            justify-items: center;
+            width: 100%;
+        }
+
+        /* Card Style */
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            width: 100%;
+            max-width: 250px;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            color: #092135;
+        }
+
+        /* Card Icons */
+        .card .icon {
+            font-size: 1.8em;
+            margin-bottom: 10px;
+        }
+
+        /* Buttons */
+        .card button, .logout-btn {
+            background-color: #ffcc00;
+            color: #092135;
+            border: none;
+            border-radius: 5px;
+            padding: 7px 15px;
+            cursor: pointer;
+            font-size: 0.85em;
+            margin-top: 10px;
+        }
+
+        .card button:hover, .logout-btn:hover {
+            background-color: #e6b800;
+        }
+
+        /* Logout Button */
+        .logout-btn {
+            background-color: red;
+            color: white;
+            width: 200px;
+            margin-top: 20px;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 600px) {
+            .overview {
+                grid-template-columns: repeat(1, 1fr);
+            }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="dashboard">
+        <h1>Account Overview</h1>
+
+        <div class="overview">
+            <div class="card">
+                <div class="icon">👤</div>
+                <p>Welcome, <span id="username">User</span></p>
+            </div>
+            <div class="card">
+                <div class="icon">💳</div>
+                <p>Your Balance: <span id="usd-value">0.00</span></p>
+                <button onclick="showTransactionForm('withdraw')">Withdraw</button>
+            </div>
+            <div class="card">
+                <div class="icon">🎁</div>
+                <p>Added Bonus: 0.00</p>
+            </div>
+            <div class="card">
+                <div class="icon">📤</div>
+                <p>Completed Withdrawals: <span id="completed-withdrawals">0.00</span></p>
+                <button onclick="showTransactionForm('deposit')">Deposit</button>
+            </div>
+        </div>
+
+        <button class="logout-btn" onclick="logout()">Logout</button>
+    </div>
+
+    <script type="module">
+        // ✅ Import Firebase SDKs (v11.5.0)
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-auth.js";
+        import { getFirestore } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-firestore.js";
+        import { getDatabase } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-database.js";
+        import { getStorage } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-storage.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-analytics.js";
+
+        // ✅ Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyAT8PbIOx8YIwWhLTahkNvf02y7yGg3yFo",
+            authDomain: "bit-digital-database.firebaseapp.com",
+            databaseURL: "https://bit-digital-database-default-rtdb.firebaseio.com",
+            projectId: "bit-digital-database",
+            storageBucket: "bit-digital-database.appspot.com",
+            messagingSenderId: "18485548254",
+            appId: "1:18485548254:web:03b854140afbb027cb5e4f",
+            measurementId: "G-E0KVGV9GDT"
+        };
+
+        // ✅ Initialize Firebase Services
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const realtimeDB = getDatabase(app);
+        const storage = getStorage(app);
+        const analytics = getAnalytics(app);
+
+        console.log("🔥 Firebase Initialized Successfully");
+
+        // ✅ Fetch Username from Local Storage
+        document.addEventListener("DOMContentLoaded", () => {
+            const storedUsername = localStorage.getItem("username");
+            if (storedUsername) {
+                document.getElementById("username").innerText = storedUsername;
+            }
+        });
+
+        // ✅ Check Authentication & Redirect if Not Logged In
+        onAuthStateChanged(auth, (user) => {
+            if (!user) {
+                localStorage.removeItem("username"); // Clear username
+                window.location.href = "login.html"; // Redirect to login
+            }
+        });
+
+        // ✅ Logout Function with Immediate Redirect
+        window.logout = async function () {
+            try {
+                await signOut(auth);
+                localStorage.removeItem("username"); // Clear stored username
+                window.location.href = "login.html"; // Redirect to login page
+            } catch (error) {
+                alert("Error logging out: " + error.message);
+            }
+        };
+
+        // ✅ Function to Show Transaction Form
+        window.showTransactionForm = function (type) {
+            alert(`Opening ${type} transaction form (Feature to be implemented)`);  
+        };
+      // ... (Firebase initialization and other code)
+
+const db = firebase.firestore(); // Initialize Firestore
+
+async function updateBalance() {
+  const userId = firebase.auth().currentUser.uid;
+  const balanceChange = parseFloat(document.getElementById('balanceUpdateAmount').value);
+
+  if (isNaN(balanceChange)) {
+    alert("Please enter a valid number for the balance update.");
+    return;
+  }
+
+  try {
+    await updateBalanceAndBonus(db, userId, balanceChange, 0); // Bonus change is 0
+    alert("Balance updated successfully!");
+
+    // Refresh the balance display
+    firebase.firestore().collection('users').doc(userId).get()
+      .then((doc) => {
+        if (doc.exists) {
+          document.getElementById('balanceDisplay').textContent = doc.data().balance.toFixed(2);
+        }
+      });
+  } catch (error) {
+    console.error("Error updating balance:", error);
+    alert("Failed to update balance. Please try again.");
+  }
+}
+
+// ... (rest of your JavaScript code)
+
+    </script>
+
+</body>
+</html>
