@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register & Login</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f4f4f4;
+            flex-direction: column;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            width: 300px;
+        }
+        input {
+            width: 90%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .register-btn {
+            background-color: #28a745;
+            color: white;
+        }
+        .switch-btn, .login-btn {
+            background-color: #007bff;
+            color: white;
+        }
+        .hidden {
+            display: none;
+        }
+        /* Loading Banner */
+        #loadingBanner {
+            display: none;
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            text-align: center;
+            padding: 10px;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Loading Banner -->
+    <div id="loadingBanner">Processing... Please wait</div>
+
+    <!-- Registration Form -->
+    <div class="container" id="registerForm">
+        <h2>Register</h2>
+        <input type="text" placeholder="Full Name" id="fullname" required>
+        <input type="text" placeholder="Username" id="username" required>
+        <input type="email" placeholder="Email" id="email" required>
+        <input type="tel" placeholder="Phone (e.g. +1234567890)" id="phone" required>
+        <input type="password" placeholder="Password" id="password" required>
+        <input type="text" placeholder="Security Question: 9 + 6 - 3 = ?" id="security" required>
+        <button class="register-btn" onclick="register()">Register</button>
+        <button class="switch-btn" onclick="showLogin()">Switch to Login</button>
+    </div>
+
+    <!-- Login Form -->
+    <div class="container hidden" id="loginForm">
+        <h2>Login</h2>
+        <input type="email" placeholder="Email" id="loginEmail" required>
+        <input type="password" placeholder="Password" id="loginPassword" required>
+        <button class="login-btn" onclick="login()">Login</button>
+        <button class="switch-btn" onclick="showRegister()">Switch to Register</button>
+    </div>
+
+    <script type="module">
+        // ✅ Import Firebase SDKs (v11.5.0)
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-auth.js";
+        import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-firestore.js";
+        import { getDatabase } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-database.js";
+        import { getStorage } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-storage.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-analytics.js";
+
+        // ✅ Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyAT8PbIOx8YIwWhLTahkNvf02y7yGg3yFo",
+            authDomain: "bit-digital-database.firebaseapp.com",
+            databaseURL: "https://bit-digital-database-default-rtdb.firebaseio.com",
+            projectId: "bit-digital-database",
+            storageBucket: "bit-digital-database.appspot.com",
+            messagingSenderId: "18485548254",
+            appId: "1:18485548254:web:03b854140afbb027cb5e4f",
+            measurementId: "G-E0KVGV9GDT"
+        };
+
+        // ✅ Initialize Firebase Services
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const realtimeDB = getDatabase(app);
+        const storage = getStorage(app);
+        const analytics = getAnalytics(app);
+
+        console.log("🔥 Firebase Initialized Successfully");
+
+        function showLoading() {
+            document.getElementById("loadingBanner").style.display = "block";
+        }
+
+        function hideLoading() {
+            document.getElementById("loadingBanner").style.display = "none";
+        }
+
+        // ✅ Attach `register` function to `window`
+        window.register = async function () {
+            let fullname = document.getElementById("fullname").value.trim();
+            let username = document.getElementById("username").value.trim();
+            let email = document.getElementById("email").value.trim();
+            let phone = document.getElementById("phone").value.trim();
+            let password = document.getElementById("password").value.trim();
+            let security = document.getElementById("security").value.trim();
+
+            if (!fullname || !username || !email || !phone || !password || !security) {
+                alert("All fields are required!");
+                return;
+            }
+            if (security !== "12") {
+                alert("Wrong security answer! Try again.");
+                return;
+            }
+
+            showLoading();
+            try {
+                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                const user = userCredential.user;
+
+                // Update the user's profile with username
+                await updateProfile(user, { displayName: username });
+
+                // Store user data in Firestore
+                await setDoc(doc(db, "users", user.uid), {
+                    fullName: fullname,
+                    username: username,
+                    email: email,
+                    phone: phone
+                });
+
+                alert("Registration successful!");
+                localStorage.setItem("username", username);
+                window.location.href = "dashboard.html";
+            } catch (error) {
+                alert(error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // ✅ Attach `login` function to `window`
+        window.login = async function () {
+            let email = document.getElementById("loginEmail").value.trim();
+            let password = document.getElementById("loginPassword").value.trim();
+
+            showLoading();
+            try {
+                const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                const user = userCredential.user;
+
+                alert("Login successful!");
+                localStorage.setItem("username", user.displayName);
+                window.location.href = "dashboard.html";
+            } catch (error) {
+                alert(error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // ✅ Attach `showLogin` and `showRegister` functions to `window`
+        window.showLogin = function () {
+            document.getElementById("registerForm").classList.add("hidden");
+            document.getElementById("loginForm").classList.remove("hidden");
+        }
+
+        window.showRegister = function () {
+            document.getElementById("loginForm").classList.add("hidden");
+            document.getElementById("registerForm").classList.remove("hidden");
+        }
+    </script>
+</body>
+</html>
