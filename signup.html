@@ -1,208 +1,804 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Register & Login</title>
-
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background-color: #f4f4f4;
-            flex-direction: column;
-        }
-        .container {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            text-align: center;
-            width: 300px;
-        }
-        input {
-            width: 90%;
-            padding: 10px;
-            margin: 10px 0;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-        }
-        button {
-            width: 100%;
-            padding: 10px;
-            margin-top: 10px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        .register-btn {
-            background-color: #28a745;
-            color: white;
-        }
-        .switch-btn, .login-btn {
-            background-color: #007bff;
-            color: white;
-        }
-        .hidden {
-            display: none;
-        }
-        /* Loading Banner */
-        #loadingBanner {
-            display: none;
-            position: fixed;
-            top: 0;
-            width: 100%;
-            background: rgba(0, 0, 0, 0.8);
-            color: white;
-            text-align: center;
-            padding: 10px;
-            font-size: 18px;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Financial Dashboard</title>
+  
+  <!-- Include Tailwind CSS via CDN for styling -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <style>
+    /* Custom styles beyond Tailwind */
+    .fade-in {
+      animation: fadeIn 0.3s ease-in-out;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      padding: 12px 20px;
+      background-color: #4CAF50;
+      color: black;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      z-index: 1000;
+      transform: translateY(100px);
+      transition: transform 0.3s ease-out;
+    }
+    
+    .toast.show {
+      transform: translateY(0);
+    }
+  </style>
 </head>
-<body>
+<body class="bg-gray-100 min-h-screen">
+  <div id="app" class="min-h-screen flex flex-col"></div>
 
-    <!-- Loading Banner -->
-    <div id="loadingBanner">Processing... Please wait</div>
+  <script>
+    // User data schema and app structure
+    const currencySymbols = {
+      'USD': '$',
+      'EUR': '€',
+      'GBP': '£',
+      'JPY': '¥',
+      'CAD': 'C$',
+      'AUD': 'A$',
+      'INR': '₹',
+      'CNY': '¥',
+      'BTC': '₿',
+      'ETH': 'Ξ'
+    };
 
-    <!-- Registration Form -->
-    <div class="container" id="registerForm">
-        <h2>Register</h2>
-        <input type="text" placeholder="Full Name" id="fullname" required>
-        <input type="text" placeholder="Username" id="username" required>
-        <input type="email" placeholder="Email" id="email" required>
-        <input type="tel" placeholder="Phone (e.g. +1234567890)" id="phone" required>
-        <input type="password" placeholder="Password" id="password" required>
-        <input type="text" placeholder="Security Question: 9 + 6 - 3 = ?" id="security" required>
-        <button class="register-btn" onclick="register()">Register</button>
-        <button class="switch-btn" onclick="showLogin()">Switch to Login</button>
-    </div>
+    // Demo users for the standalone version
+    const demoUsers = [
+      {
+        username: "admin",
+        password: "admin123",
+        email: "admin@example.com",
+        fullName: "Admin User",
+        phoneNumber: "123-456-7890",
+        currency: "USD",
+        balance: "5000.00",
+        bonus: "750.00",
+        completedWithdrawal: "1250.00",
+        isAdmin: true,
+        balanceUpdated: "2 days ago",
+        bonusUpdated: "1 day ago",
+        withdrawalUpdated: "3 days ago"
+      },
+      {
+        username: "user",
+        password: "user123",
+        email: "user@example.com",
+        fullName: "Regular User",
+        phoneNumber: "987-654-3210",
+        currency: "EUR",
+        balance: "2500.00",
+        bonus: "300.00",
+        completedWithdrawal: "500.00",
+        isAdmin: false,
+        balanceUpdated: "1 day ago",
+        bonusUpdated: "3 days ago",
+        withdrawalUpdated: "1 week ago"
+      }
+    ];
 
-    <!-- Login Form -->
-    <div class="container hidden" id="loginForm">
-        <h2>Login</h2>
-        <input type="email" placeholder="Email" id="loginEmail" required>
-        <input type="password" placeholder="Password" id="loginPassword" required>
-        <button class="login-btn" onclick="login()">Login</button>
-        <button class="switch-btn" onclick="showRegister()">Switch to Register</button>
-    </div>
+    // Initialize local storage with demo users if not already present
+    if (!localStorage.getItem('demoUsers')) {
+      localStorage.setItem('demoUsers', JSON.stringify(demoUsers));
+    }
 
-    <script type="module">
-        // ✅ Import Firebase SDKs (v11.5.0)
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-app.js";
-        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-auth.js";
-        import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-firestore.js";
-        import { getDatabase } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-database.js";
-        import { getStorage } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-storage.js";
-        import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-analytics.js";
+    // Application state
+    let currentUser = null;
+    let isAdminMode = false;
 
-        // ✅ Firebase Configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyAT8PbIOx8YIwWhLTahkNvf02y7yGg3yFo",
-            authDomain: "bit-digital-database.firebaseapp.com",
-            databaseURL: "https://bit-digital-database-default-rtdb.firebaseio.com",
-            projectId: "bit-digital-database",
-            storageBucket: "bit-digital-database.appspot.com",
-            messagingSenderId: "18485548254",
-            appId: "1:18485548254:web:03b854140afbb027cb5e4f",
-            measurementId: "G-E0KVGV9GDT"
-        };
+    // Utility functions
+    function formatCurrency(value) {
+      const numValue = parseFloat(value);
+      return new Intl.NumberFormat("en-US").format(numValue);
+    }
 
-        // ✅ Initialize Firebase Services
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-        const realtimeDB = getDatabase(app);
-        const storage = getStorage(app);
-        const analytics = getAnalytics(app);
+    function showToast(message, duration = 3000) {
+      const toast = document.createElement('div');
+      toast.className = 'toast';
+      toast.textContent = message;
+      document.body.appendChild(toast);
+      
+      // Force reflow to ensure the animation works
+      void toast.offsetWidth;
+      
+      toast.classList.add('show');
+      
+      setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => {
+          document.body.removeChild(toast);
+        }, 300);
+      }, duration);
+    }
 
-        console.log("🔥 Firebase Initialized Successfully");
+    function getCurrentUser() {
+      const username = localStorage.getItem('currentUsername');
+      if (!username) return null;
+      
+      const users = JSON.parse(localStorage.getItem('demoUsers'));
+      return users.find(user => user.username === username);
+    }
 
-        function showLoading() {
-            document.getElementById("loadingBanner").style.display = "block";
+    function updateUserData(updatedUser) {
+      const users = JSON.parse(localStorage.getItem('demoUsers'));
+      const index = users.findIndex(user => user.username === updatedUser.username);
+      
+      if (index !== -1) {
+        users[index] = updatedUser;
+        localStorage.setItem('demoUsers', JSON.stringify(users));
+        currentUser = updatedUser;
+        return true;
+      }
+      
+      return false;
+    }
+
+    // Component rendering functions
+    function renderHeader() {
+      const header = document.createElement('header');
+      header.className = 'bg-white shadow';
+      
+      header.innerHTML = `
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div class="flex justify-between items-center">
+            <h1 class="text-xl font-bold text-gray-800">Financial Dashboard</h1>
+            <div class="flex items-center space-x-4">
+              <span class="text-sm text-gray-600">Welcome, ${currentUser.username}</span>
+              ${currentUser.isAdmin ? 
+                `<button id="admin-toggle" class="px-3 py-1 bg-blue-100 text-blue-800 rounded text-sm">
+                  ${isAdminMode ? 'Exit Admin Mode' : 'Admin Mode'}
+                </button>` : ''
+              }
+              <button id="logout-btn" class="px-3 py-1 bg-gray-200 text-gray-800 rounded text-sm">Logout</button>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      return header;
+    }
+
+    function renderFinancialCard(title, value, updatedAt, badgeText, badgeColor, currencySymbol = '$') {
+      let badgeClass = '';
+      
+      switch (badgeColor) {
+        case "blue":
+          badgeClass = 'bg-blue-100 text-blue-800';
+          break;
+        case "green":
+          badgeClass = 'bg-green-100 text-green-800';
+          break;
+        case "purple":
+          badgeClass = 'bg-purple-100 text-purple-800';
+          break;
+        default:
+          badgeClass = 'bg-gray-100 text-gray-800';
+      }
+      
+      return `
+        <div class="bg-white rounded-lg shadow overflow-hidden">
+          <div class="p-5">
+            <div class="flex justify-between items-center mb-4">
+              <h3 class="font-medium text-gray-700">${title}</h3>
+              <span class="text-xs px-2 py-1 ${badgeClass} rounded-full">
+                ${badgeText}
+              </span>
+            </div>
+            <p class="text-3xl font-bold text-gray-800 mb-1">${currencySymbol}${formatCurrency(value)}</p>
+            <p class="text-sm text-gray-500">Last updated: ${updatedAt}</p>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderUserDashboard() {
+      const currencySymbol = currencySymbols[currentUser.currency] || '$';
+      
+      const dashboard = document.createElement('div');
+      dashboard.id = 'user-dashboard';
+      
+      dashboard.innerHTML = `
+        <div class="mb-6">
+          <h2 class="text-xl font-medium text-gray-700">Your Financial Overview</h2>
+          <p class="text-gray-500 text-sm">View your current financial status</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          ${renderFinancialCard(
+            'Balance', 
+            currentUser.balance, 
+            currentUser.balanceUpdated, 
+            'Available', 
+            'blue',
+            currencySymbol
+          )}
+          
+          ${renderFinancialCard(
+            'Bonus', 
+            currentUser.bonus, 
+            currentUser.bonusUpdated, 
+            'Earned', 
+            'green',
+            currencySymbol
+          )}
+          
+          ${renderFinancialCard(
+            'Completed Withdrawals', 
+            currentUser.completedWithdrawal, 
+            currentUser.withdrawalUpdated, 
+            'Processed', 
+            'purple',
+            currencySymbol
+          )}
+        </div>
+
+        <div class="mt-8 bg-white rounded-lg shadow p-6">
+          <h3 class="text-lg font-medium text-gray-700 mb-4">Recent Activity</h3>
+          <div class="space-y-3">
+            <div class="flex items-center justify-between py-2 border-b border-gray-100">
+              <div class="flex items-center">
+                <div class="w-8 h-8 rounded-full flex items-center justify-center mr-3 bg-blue-100 text-blue-500">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
+                </div>
+                <div>
+                  <p class="text-sm font-medium text-gray-700">Bonus Credited</p>
+                  <p class="text-xs text-gray-500">Today</p>
+                </div>
+              </div>
+              <span class="text-sm font-medium text-green-600">+${currencySymbol}50.00</span>
+            </div>
+            
+            <div class="flex items-center justify-between py-2 border-b border-gray-100">
+              <div class="flex items-center">
+                <div class="w-8 h-8 rounded-full flex items-center justify-center mr-3 bg-purple-100 text-purple-500">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <div>
+                  <p class="text-sm font-medium text-gray-700">Withdrawal Processed</p>
+                  <p class="text-xs text-gray-500">Yesterday</p>
+                </div>
+              </div>
+              <span class="text-sm font-medium text-purple-600">${currencySymbol}200.00</span>
+            </div>
+            
+            <div class="flex items-center justify-between py-2 border-b border-gray-100">
+              <div class="flex items-center">
+                <div class="w-8 h-8 rounded-full flex items-center justify-center mr-3 bg-blue-100 text-blue-500">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
+                </div>
+                <div>
+                  <p class="text-sm font-medium text-gray-700">Deposit</p>
+                  <p class="text-xs text-gray-500">3 days ago</p>
+                </div>
+              </div>
+              <span class="text-sm font-medium text-green-600">+${currencySymbol}500.00</span>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      return dashboard;
+    }
+
+    function renderAdminDashboard() {
+      const currencySymbol = currencySymbols[currentUser.currency] || '$';
+      
+      const dashboard = document.createElement('div');
+      dashboard.id = 'admin-dashboard';
+      
+      dashboard.innerHTML = `
+        <div class="mb-6 flex justify-between items-center">
+          <div>
+            <h2 class="text-xl font-medium text-gray-700">Admin Dashboard</h2>
+            <p class="text-gray-500 text-sm">Edit user financial information</p>
+          </div>
+          <button id="save-changes-btn" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition">
+            Save All Changes
+          </button>
+        </div>
+
+        <div class="bg-white rounded-lg shadow overflow-hidden mb-6">
+          <div class="p-6">
+            <h3 class="text-lg font-medium text-gray-700 mb-4">Edit User Information</h3>
+            <form id="admin-form" class="space-y-4">
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="space-y-2">
+                  <label for="edit-balance" class="block text-sm font-medium text-gray-700">Balance</label>
+                  <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500">${currencySymbol}</span>
+                    <input
+                      type="text"
+                      id="edit-balance"
+                      name="balance"
+                      value="${currentUser.balance}"
+                      class="block w-full pl-8 pr-12 py-2 border border-gray-300 rounded-md shadow-sm"
+                    />
+                  </div>
+                  <p class="text-xs text-gray-500">Current value: ${currencySymbol}${formatCurrency(currentUser.balance)}</p>
+                </div>
+
+                <div class="space-y-2">
+                  <label for="edit-bonus" class="block text-sm font-medium text-gray-700">Bonus</label>
+                  <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500">${currencySymbol}</span>
+                    <input
+                      type="text"
+                      id="edit-bonus"
+                      name="bonus"
+                      value="${currentUser.bonus}"
+                      class="block w-full pl-8 pr-12 py-2 border border-gray-300 rounded-md shadow-sm"
+                    />
+                  </div>
+                  <p class="text-xs text-gray-500">Current value: ${currencySymbol}${formatCurrency(currentUser.bonus)}</p>
+                </div>
+
+                <div class="space-y-2">
+                  <label for="edit-withdrawal" class="block text-sm font-medium text-gray-700">Completed Withdrawals</label>
+                  <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500">${currencySymbol}</span>
+                    <input
+                      type="text"
+                      id="edit-withdrawal"
+                      name="withdrawal"
+                      value="${currentUser.completedWithdrawal}"
+                      class="block w-full pl-8 pr-12 py-2 border border-gray-300 rounded-md shadow-sm"
+                    />
+                  </div>
+                  <p class="text-xs text-gray-500">Current value: ${currencySymbol}${formatCurrency(currentUser.completedWithdrawal)}</p>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow overflow-hidden">
+          <div class="p-6">
+            <h3 class="text-lg font-medium text-gray-700 mb-4">User Management</h3>
+            <div class="overflow-x-auto">
+              <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                  <tr>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Balance</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bonus</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Withdrawals</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                  </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                  <tr>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                      <div class="flex items-center">
+                        <div class="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500">
+                          <span class="text-sm font-medium">
+                            ${currentUser.username.substring(0, 2).toUpperCase()}
+                          </span>
+                        </div>
+                        <div class="ml-4">
+                          <div class="text-sm font-medium text-gray-900">${currentUser.username}</div>
+                          <div class="text-sm text-gray-500">Current User</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                      <div class="text-sm text-gray-900">${currencySymbol}${currentUser.balance}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                      <div class="text-sm text-gray-900">${currencySymbol}${currentUser.bonus}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                      <div class="text-sm text-gray-900">${currencySymbol}${currentUser.completedWithdrawal}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <button class="text-indigo-600 hover:text-indigo-900 mr-2">
+                        Currently Editing
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      return dashboard;
+    }
+
+    function renderFooter() {
+      const footer = document.createElement('footer');
+      footer.className = 'bg-white py-4 mt-auto';
+      
+      footer.innerHTML = `
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <p class="text-center text-sm text-gray-500">
+            © ${new Date().getFullYear()} Financial Dashboard. All rights reserved.
+          </p>
+        </div>
+      `;
+      
+      return footer;
+    }
+
+    function renderLoginForm() {
+      const main = document.createElement('div');
+      main.className = 'min-h-screen flex items-center justify-center bg-gray-100 px-4';
+      
+      main.innerHTML = `
+        <div class="w-full max-w-md bg-white rounded-lg shadow-md overflow-hidden">
+          <div class="px-6 py-4 bg-gray-50 border-b">
+            <h2 id="form-title" class="text-2xl font-bold text-center text-gray-800">
+              Login to Dashboard
+            </h2>
+          </div>
+          <div class="p-6">
+            <form id="auth-form" class="space-y-4">
+              <div class="space-y-2">
+                <label for="username" class="block text-sm font-medium text-gray-700">Username</label>
+                <input
+                  id="username"
+                  type="text"
+                  placeholder="Enter your username"
+                  class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"
+                  required
+                />
+              </div>
+              <div class="space-y-2">
+                <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
+                <input
+                  id="password"
+                  type="password"
+                  placeholder="Enter your password"
+                  class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"
+                  required
+                />
+              </div>
+              
+              <div id="register-fields" class="hidden space-y-4">
+                <div class="space-y-2">
+                  <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
+                  <input
+                    id="email"
+                    type="email"
+                    placeholder="Enter your email"
+                    class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"
+                  />
+                </div>
+                <div class="space-y-2">
+                  <label for="fullName" class="block text-sm font-medium text-gray-700">Full Name</label>
+                  <input
+                    id="fullName"
+                    type="text"
+                    placeholder="Enter your full name"
+                    class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"
+                  />
+                </div>
+                <div class="space-y-2">
+                  <label for="phoneNumber" class="block text-sm font-medium text-gray-700">Phone Number</label>
+                  <input
+                    id="phoneNumber"
+                    type="tel"
+                    placeholder="Enter your phone number"
+                    class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"
+                  />
+                </div>
+                <div class="space-y-2">
+                  <label for="currency" class="block text-sm font-medium text-gray-700">Preferred Currency</label>
+                  <select
+                    id="currency"
+                    class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"
+                  >
+                    ${Object.entries(currencySymbols).map(([code, symbol]) => 
+                      `<option value="${code}">${code} (${symbol})</option>`
+                    ).join('')}
+                  </select>
+                </div>
+              </div>
+              
+              <button
+                type="submit"
+                id="submit-btn"
+                class="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
+              >
+                Login
+              </button>
+            </form>
+            <div class="mt-4 text-center">
+              <button
+                type="button"
+                id="toggle-form"
+                class="text-sm text-blue-600 hover:underline"
+              >
+                Don't have an account? Register
+              </button>
+            </div>
+            <div class="mt-6 text-center text-sm text-gray-500">
+              <p>For demo purposes:</p>
+              <p>Username: admin, Password: admin123</p>
+              <p>Username: user, Password: user123</p>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      return main;
+    }
+
+    function renderDashboard() {
+      const app = document.getElementById('app');
+      app.innerHTML = '';
+      
+      // Add header
+      app.appendChild(renderHeader());
+      
+      // Add main content
+      const main = document.createElement('main');
+      main.className = 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow';
+      
+      if (currentUser.isAdmin && isAdminMode) {
+        main.appendChild(renderAdminDashboard());
+      } else {
+        main.appendChild(renderUserDashboard());
+      }
+      
+      app.appendChild(main);
+      
+      // Add footer
+      app.appendChild(renderFooter());
+      
+      // Add event listeners
+      document.getElementById('logout-btn').addEventListener('click', handleLogout);
+      
+      if (currentUser.isAdmin) {
+        document.getElementById('admin-toggle').addEventListener('click', toggleAdminMode);
+      }
+      
+      if (isAdminMode) {
+        document.getElementById('save-changes-btn').addEventListener('click', handleSaveChanges);
+      }
+    }
+
+    function renderLoginPage() {
+      const app = document.getElementById('app');
+      app.innerHTML = '';
+      app.appendChild(renderLoginForm());
+      
+      // Add event listeners
+      const authForm = document.getElementById('auth-form');
+      const toggleForm = document.getElementById('toggle-form');
+      const formTitle = document.getElementById('form-title');
+      const registerFields = document.getElementById('register-fields');
+      const submitBtn = document.getElementById('submit-btn');
+      
+      let isRegistering = false;
+      
+      toggleForm.addEventListener('click', () => {
+        isRegistering = !isRegistering;
+        registerFields.classList.toggle('hidden');
+        
+        if (isRegistering) {
+          formTitle.textContent = 'Create an Account';
+          submitBtn.textContent = 'Register';
+          toggleForm.textContent = 'Already have an account? Login';
+        } else {
+          formTitle.textContent = 'Login to Dashboard';
+          submitBtn.textContent = 'Login';
+          toggleForm.textContent = "Don't have an account? Register";
+        }
+      });
+      
+      authForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+        
+        if (isRegistering) {
+          // Register new user
+          const email = document.getElementById('email').value;
+          const fullName = document.getElementById('fullName').value;
+          const phoneNumber = document.getElementById('phoneNumber').value;
+          const currency = document.getElementById('currency').value;
+          
+          handleRegister(username, password, email, fullName, phoneNumber, currency);
+        } else {
+          // Login existing user
+          handleLogin(username, password);
+        }
+      });
+    }
+
+    // Event handlers
+    function handleLogin(username, password) {
+      const users = JSON.parse(localStorage.getItem('demoUsers'));
+      const user = users.find(u => u.username === username && u.password === password);
+      
+      if (user) {
+        localStorage.setItem('currentUsername', username);
+        currentUser = user;
+        renderDashboard();
+        showToast('Login successful! Welcome back.');
+      } else {
+        showToast('Invalid username or password.', 5000);
+      }
+    }
+
+    function handleRegister(username, password, email, fullName, phoneNumber, currency) {
+      const users = JSON.parse(localStorage.getItem('demoUsers'));
+      
+      if (users.some(u => u.username === username)) {
+        showToast('Username already exists. Please choose a different one.', 5000);
+        return;
+      }
+      
+      const newUser = {
+        username,
+        password,
+        email,
+        fullName,
+        phoneNumber,
+        currency,
+        balance: "0.00",
+        bonus: "0.00",
+        completedWithdrawal: "0.00",
+        isAdmin: false,
+        balanceUpdated: "Never",
+        bonusUpdated: "Never",
+        withdrawalUpdated: "Never"
+      };
+      
+      users.push(newUser);
+      localStorage.setItem('demoUsers', JSON.stringify(users));
+      localStorage.setItem('currentUsername', username);
+      
+      currentUser = newUser;
+      renderDashboard();
+      showToast('Registration successful! Your account has been created.');
+    }
+
+    function handleLogout() {
+      localStorage.removeItem('currentUsername');
+      currentUser = null;
+      isAdminMode = false;
+      renderLoginPage();
+      showToast('You have been logged out.');
+    }
+
+    function toggleAdminMode() {
+      isAdminMode = !isAdminMode;
+      renderDashboard();
+      showToast(isAdminMode ? 'Admin mode activated.' : 'Exited admin mode.');
+    }
+
+    function handleSaveChanges() {
+      const balance = document.getElementById('edit-balance').value;
+      const bonus = document.getElementById('edit-bonus').value;
+      const withdrawal = document.getElementById('edit-withdrawal').value;
+      
+      // Validate inputs as numbers
+      if (isNaN(parseFloat(balance)) || isNaN(parseFloat(bonus)) || isNaN(parseFloat(withdrawal))) {
+        showToast('Please enter valid numbers for all fields.', 5000);
+        return;
+      }
+      
+      // Update user data
+      const updatedUser = {
+        ...currentUser,
+        balance,
+        bonus,
+        completedWithdrawal: withdrawal,
+        balanceUpdated: "Just now",
+        bonusUpdated: "Just now",
+        withdrawalUpdated: "Just now"
+      };
+      
+      if (updateUserData(updatedUser)) {
+        showToast('Changes saved successfully!');
+        renderDashboard();
+      } else {
+        showToast('Failed to update user data. Please try again.', 5000);
+      }
+    }
+
+    // Initialize app
+    document.addEventListener('DOMContentLoaded', () => {
+      currentUser = getCurrentUser();
+      
+      if (currentUser) {
+        renderDashboard();
+      } else {
+        renderLoginPage();
+      }
+    });
+  </script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+    // Initialize Supabase
+    const SUPABASE_URL = "https://gnxjkwtjwicrshhnavwy.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdueGprd3Rqd2ljcnNoaG5hdnd5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI5NTMzNjEsImV4cCI6MjA1ODUyOTM2MX0.NooibfJjqVPBEQV--xIqMvtaD9zLEgfsNVdVZWyclwY"; // Replace with your actual anon key
+
+    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // Replace with the actual user ID
+    const userId = "USER_ID_HERE"; // Fetch dynamically if needed
+
+    async function fetchUserData() {
+        let { data, error } = await supabase
+            .from("clients") // Replace "clients" with your actual table
+            .select("balance, bonus, completed_withdrawals")
+            .eq("id", userId)
+            .single();
+
+        if (error) {
+            console.error("Error fetching user data:", error);
+            return;
         }
 
-        function hideLoading() {
-            document.getElementById("loadingBanner").style.display = "none";
+        document.getElementById("balance").innerText = `$${data.balance}`;
+        document.getElementById("bonus").innerText = `$${data.bonus}`;
+        document.getElementById("withdrawals").innerText = data.completed_withdrawals;
+    }
+
+    async function updateBalance(amount) {
+        let { error } = await supabase
+            .from("clients")
+            .update({ balance: supabase.raw("balance + ?", [amount]) })
+            .eq("id", userId);
+
+        if (error) {
+            console.error("Error updating balance:", error);
+            return;
         }
+        fetchUserData();
+    }
 
-        // ✅ Attach `register` function to `window`
-        window.register = async function () {
-            let fullname = document.getElementById("fullname").value.trim();
-            let username = document.getElementById("username").value.trim();
-            let email = document.getElementById("email").value.trim();
-            let phone = document.getElementById("phone").value.trim();
-            let password = document.getElementById("password").value.trim();
-            let security = document.getElementById("security").value.trim();
+    async function updateBonus(amount) {
+        let { error } = await supabase
+            .from("clients")
+            .update({ bonus: supabase.raw("bonus + ?", [amount]) })
+            .eq("id", userId);
 
-            if (!fullname || !username || !email || !phone || !password || !security) {
-                alert("All fields are required!");
-                return;
-            }
-            if (security !== "12") {
-                alert("Wrong security answer! Try again.");
-                return;
-            }
-
-            showLoading();
-            try {
-                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-                const user = userCredential.user;
-
-                // Update the user's profile with username
-                await updateProfile(user, { displayName: username });
-
-                // Store user data in Firestore
-                await setDoc(doc(db, "users", user.uid), {
-                    fullName: fullname,
-                    username: username,
-                    email: email,
-                    phone: phone
-                });
-
-                alert("Registration successful!");
-                localStorage.setItem("username", username);
-                window.location.href = "dashboard.html";
-            } catch (error) {
-                alert(error.message);
-            } finally {
-                hideLoading();
-            }
+        if (error) {
+            console.error("Error updating bonus:", error);
+            return;
         }
+        fetchUserData();
+    }
 
-        // ✅ Attach `login` function to `window`
-        window.login = async function () {
-            let email = document.getElementById("loginEmail").value.trim();
-            let password = document.getElementById("loginPassword").value.trim();
+    async function markWithdrawalComplete() {
+        let { error } = await supabase
+            .from("clients")
+            .update({ completed_withdrawals: supabase.raw("completed_withdrawals + 1") })
+            .eq("id", userId);
 
-            showLoading();
-            try {
-                const userCredential = await signInWithEmailAndPassword(auth, email, password);
-                const user = userCredential.user;
-
-                alert("Login successful!");
-                localStorage.setItem("username", user.displayName);
-                window.location.href = "dashboard.html";
-            } catch (error) {
-                alert(error.message);
-            } finally {
-                hideLoading();
-            }
+        if (error) {
+            console.error("Error updating withdrawals:", error);
+            return;
         }
+        fetchUserData();
+    }
 
-        // ✅ Attach `showLogin` and `showRegister` functions to `window`
-        window.showLogin = function () {
-            document.getElementById("registerForm").classList.add("hidden");
-            document.getElementById("loginForm").classList.remove("hidden");
-        }
-
-        window.showRegister = function () {
-            document.getElementById("loginForm").classList.add("hidden");
-            document.getElementById("registerForm").classList.remove("hidden");
-        }
-    </script>
+    // Load user data when the page loads
+    fetchUserData();
+</script>
 </body>
 </html>
