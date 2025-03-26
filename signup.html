@@ -25,7 +25,7 @@
       right: 20px;
       padding: 12px 20px;
       background-color: #4CAF50;
-      color: black;
+      color: white;
       border-radius: 8px;
       box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
       z-index: 1000;
@@ -38,7 +38,7 @@
     }
   </style>
 </head>
-<body class="bg-gray-100 min-h-screen">
+<body class="bg-black min-h-screen text-white">
   <div id="app" class="min-h-screen flex flex-col"></div>
 
   <script>
@@ -149,20 +149,20 @@
     // Component rendering functions
     function renderHeader() {
       const header = document.createElement('header');
-      header.className = 'bg-white shadow';
+      header.className = 'bg-gray-900 shadow';
       
       header.innerHTML = `
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div class="flex justify-between items-center">
-            <h1 class="text-xl font-bold text-gray-800">Financial Dashboard</h1>
+            <h1 class="text-xl font-bold text-white">Financial Dashboard</h1>
             <div class="flex items-center space-x-4">
-              <span class="text-sm text-gray-600">Welcome, ${currentUser.username}</span>
+              <span class="text-sm text-gray-300">Welcome, ${currentUser.username}</span>
               ${currentUser.isAdmin ? 
-                `<button id="admin-toggle" class="px-3 py-1 bg-blue-100 text-blue-800 rounded text-sm">
+                `<button id="admin-toggle" class="px-3 py-1 bg-blue-700 text-white rounded text-sm hover:bg-blue-800 transition">
                   ${isAdminMode ? 'Exit Admin Mode' : 'Admin Mode'}
                 </button>` : ''
               }
-              <button id="logout-btn" class="px-3 py-1 bg-gray-200 text-gray-800 rounded text-sm">Logout</button>
+              <button id="logout-btn" class="px-3 py-1 bg-gray-700 text-white rounded text-sm hover:bg-gray-800 transition">Logout</button>
             </div>
           </div>
         </div>
@@ -176,29 +176,29 @@
       
       switch (badgeColor) {
         case "blue":
-          badgeClass = 'bg-blue-100 text-blue-800';
+          badgeClass = 'bg-blue-900 text-blue-200';
           break;
         case "green":
-          badgeClass = 'bg-green-100 text-green-800';
+          badgeClass = 'bg-green-900 text-green-200';
           break;
         case "purple":
-          badgeClass = 'bg-purple-100 text-purple-800';
+          badgeClass = 'bg-purple-900 text-purple-200';
           break;
         default:
-          badgeClass = 'bg-gray-100 text-gray-800';
+          badgeClass = 'bg-gray-700 text-gray-200';
       }
       
       return `
-        <div class="bg-white rounded-lg shadow overflow-hidden">
+        <div class="bg-gray-800 rounded-lg shadow-md border border-gray-700 overflow-hidden">
           <div class="p-5">
             <div class="flex justify-between items-center mb-4">
-              <h3 class="font-medium text-gray-700">${title}</h3>
+              <h3 class="font-medium text-gray-200">${title}</h3>
               <span class="text-xs px-2 py-1 ${badgeClass} rounded-full">
                 ${badgeText}
               </span>
             </div>
-            <p class="text-3xl font-bold text-gray-800 mb-1">${currencySymbol}${formatCurrency(value)}</p>
-            <p class="text-sm text-gray-500">Last updated: ${updatedAt}</p>
+            <p class="text-3xl font-bold text-white mb-1">${currencySymbol}${formatCurrency(value)}</p>
+            <p class="text-sm text-gray-400">Last updated: ${updatedAt}</p>
           </div>
         </div>
       `;
@@ -210,10 +210,13 @@
       const dashboard = document.createElement('div');
       dashboard.id = 'user-dashboard';
       
+      // Check if the user has any activity (only present for demo users or when admin updates are made)
+      const hasActivity = currentUser.activities && currentUser.activities.length > 0;
+      
       dashboard.innerHTML = `
         <div class="mb-6">
-          <h2 class="text-xl font-medium text-gray-700">Your Financial Overview</h2>
-          <p class="text-gray-500 text-sm">View your current financial status</p>
+          <h2 class="text-xl font-medium text-white">Your Financial Overview</h2>
+          <p class="text-gray-400 text-sm">View your current financial status</p>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -245,53 +248,38 @@
           )}
         </div>
 
-        <div class="mt-8 bg-white rounded-lg shadow p-6">
-          <h3 class="text-lg font-medium text-gray-700 mb-4">Recent Activity</h3>
+        <div class="mt-8 bg-gray-800 rounded-lg shadow-md border border-gray-700 p-6">
+          <h3 class="text-lg font-medium text-white mb-4">Recent Activity</h3>
           <div class="space-y-3">
-            <div class="flex items-center justify-between py-2 border-b border-gray-100">
-              <div class="flex items-center">
-                <div class="w-8 h-8 rounded-full flex items-center justify-center mr-3 bg-blue-100 text-blue-500">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                  </svg>
+            ${hasActivity ? currentUser.activities.map(activity => `
+              <div class="flex items-center justify-between py-2 border-b border-gray-700">
+                <div class="flex items-center">
+                  <div class="w-8 h-8 rounded-full flex items-center justify-center mr-3 ${
+                    activity.type === 'balance' ? 'bg-blue-900 text-blue-200' : 
+                    activity.type === 'bonus' ? 'bg-green-900 text-green-200' : 
+                    'bg-purple-900 text-purple-200'
+                  }">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${
+                        activity.type === 'withdrawal' ? 'M5 13l4 4L19 7' : 'M12 6v6m0 0v6m0-6h6m-6 0H6'
+                      }" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p class="text-sm font-medium text-gray-200">${activity.description}</p>
+                    <p class="text-xs text-gray-400">${activity.time}</p>
+                  </div>
                 </div>
-                <div>
-                  <p class="text-sm font-medium text-gray-700">Bonus Credited</p>
-                  <p class="text-xs text-gray-500">Today</p>
-                </div>
+                <span class="text-sm font-medium ${
+                  activity.type === 'balance' || activity.type === 'bonus' ? 'text-green-400' : 'text-purple-400'
+                }">${activity.amount}</span>
               </div>
-              <span class="text-sm font-medium text-green-600">+${currencySymbol}50.00</span>
-            </div>
-            
-            <div class="flex items-center justify-between py-2 border-b border-gray-100">
-              <div class="flex items-center">
-                <div class="w-8 h-8 rounded-full flex items-center justify-center mr-3 bg-purple-100 text-purple-500">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-                <div>
-                  <p class="text-sm font-medium text-gray-700">Withdrawal Processed</p>
-                  <p class="text-xs text-gray-500">Yesterday</p>
-                </div>
+            `).join('') : `
+              <div class="py-4 text-center text-gray-400">
+                <p>No recent activity to display</p>
+                <p class="text-sm mt-2">Activity will appear when an admin updates your account</p>
               </div>
-              <span class="text-sm font-medium text-purple-600">${currencySymbol}200.00</span>
-            </div>
-            
-            <div class="flex items-center justify-between py-2 border-b border-gray-100">
-              <div class="flex items-center">
-                <div class="w-8 h-8 rounded-full flex items-center justify-center mr-3 bg-blue-100 text-blue-500">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                  </svg>
-                </div>
-                <div>
-                  <p class="text-sm font-medium text-gray-700">Deposit</p>
-                  <p class="text-xs text-gray-500">3 days ago</p>
-                </div>
-              </div>
-              <span class="text-sm font-medium text-green-600">+${currencySymbol}500.00</span>
-            </div>
+            `}
           </div>
         </div>
       `;
@@ -300,7 +288,10 @@
     }
 
     function renderAdminDashboard() {
-      const currencySymbol = currencySymbols[currentUser.currency] || '$';
+      // Get all users for the admin dashboard
+      const users = JSON.parse(localStorage.getItem('demoUsers'));
+      const selectedUser = window.selectedUser || currentUser;
+      const currencySymbol = currencySymbols[selectedUser.currency] || '$';
       
       const dashboard = document.createElement('div');
       dashboard.id = 'admin-dashboard';
@@ -308,112 +299,121 @@
       dashboard.innerHTML = `
         <div class="mb-6 flex justify-between items-center">
           <div>
-            <h2 class="text-xl font-medium text-gray-700">Admin Dashboard</h2>
-            <p class="text-gray-500 text-sm">Edit user financial information</p>
+            <h2 class="text-xl font-medium text-white">Admin Dashboard</h2>
+            <p class="text-gray-400 text-sm">Edit user financial information</p>
           </div>
           <button id="save-changes-btn" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition">
-            Save All Changes
+            Save Changes
           </button>
         </div>
 
-        <div class="bg-white rounded-lg shadow overflow-hidden mb-6">
+        <div class="bg-gray-800 rounded-lg shadow-md border border-gray-700 overflow-hidden mb-6">
           <div class="p-6">
-            <h3 class="text-lg font-medium text-gray-700 mb-4">Edit User Information</h3>
+            <h3 class="text-lg font-medium text-white mb-4">Edit User Information for: ${selectedUser.username}</h3>
             <form id="admin-form" class="space-y-4">
+              <input type="hidden" id="edit-username" value="${selectedUser.username}" />
               <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div class="space-y-2">
-                  <label for="edit-balance" class="block text-sm font-medium text-gray-700">Balance</label>
+                  <label for="edit-balance" class="block text-sm font-medium text-gray-200">Balance</label>
                   <div class="relative">
-                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500">${currencySymbol}</span>
+                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">${currencySymbol}</span>
                     <input
                       type="text"
                       id="edit-balance"
                       name="balance"
-                      value="${currentUser.balance}"
-                      class="block w-full pl-8 pr-12 py-2 border border-gray-300 rounded-md shadow-sm"
+                      value="${selectedUser.balance}"
+                      class="block w-full pl-8 pr-12 py-2 border border-gray-600 bg-gray-700 text-white rounded-md shadow-sm"
                     />
                   </div>
-                  <p class="text-xs text-gray-500">Current value: ${currencySymbol}${formatCurrency(currentUser.balance)}</p>
+                  <p class="text-xs text-gray-400">Current value: ${currencySymbol}${formatCurrency(selectedUser.balance)}</p>
                 </div>
 
                 <div class="space-y-2">
-                  <label for="edit-bonus" class="block text-sm font-medium text-gray-700">Bonus</label>
+                  <label for="edit-bonus" class="block text-sm font-medium text-gray-200">Bonus</label>
                   <div class="relative">
-                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500">${currencySymbol}</span>
+                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">${currencySymbol}</span>
                     <input
                       type="text"
                       id="edit-bonus"
                       name="bonus"
-                      value="${currentUser.bonus}"
-                      class="block w-full pl-8 pr-12 py-2 border border-gray-300 rounded-md shadow-sm"
+                      value="${selectedUser.bonus}"
+                      class="block w-full pl-8 pr-12 py-2 border border-gray-600 bg-gray-700 text-white rounded-md shadow-sm"
                     />
                   </div>
-                  <p class="text-xs text-gray-500">Current value: ${currencySymbol}${formatCurrency(currentUser.bonus)}</p>
+                  <p class="text-xs text-gray-400">Current value: ${currencySymbol}${formatCurrency(selectedUser.bonus)}</p>
                 </div>
 
                 <div class="space-y-2">
-                  <label for="edit-withdrawal" class="block text-sm font-medium text-gray-700">Completed Withdrawals</label>
+                  <label for="edit-withdrawal" class="block text-sm font-medium text-gray-200">Completed Withdrawals</label>
                   <div class="relative">
-                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500">${currencySymbol}</span>
+                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">${currencySymbol}</span>
                     <input
                       type="text"
                       id="edit-withdrawal"
                       name="withdrawal"
-                      value="${currentUser.completedWithdrawal}"
-                      class="block w-full pl-8 pr-12 py-2 border border-gray-300 rounded-md shadow-sm"
+                      value="${selectedUser.completedWithdrawal}"
+                      class="block w-full pl-8 pr-12 py-2 border border-gray-600 bg-gray-700 text-white rounded-md shadow-sm"
                     />
                   </div>
-                  <p class="text-xs text-gray-500">Current value: ${currencySymbol}${formatCurrency(currentUser.completedWithdrawal)}</p>
+                  <p class="text-xs text-gray-400">Current value: ${currencySymbol}${formatCurrency(selectedUser.completedWithdrawal)}</p>
                 </div>
               </div>
             </form>
           </div>
         </div>
 
-        <div class="bg-white rounded-lg shadow overflow-hidden">
+        <div class="bg-gray-800 rounded-lg shadow-md border border-gray-700 overflow-hidden">
           <div class="p-6">
-            <h3 class="text-lg font-medium text-gray-700 mb-4">User Management</h3>
+            <h3 class="text-lg font-medium text-white mb-4">User Management</h3>
             <div class="overflow-x-auto">
-              <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
+              <table class="min-w-full divide-y divide-gray-700">
+                <thead class="bg-gray-900">
                   <tr>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Balance</th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bonus</th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Withdrawals</th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">User</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Balance</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Bonus</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Withdrawals</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
-                  <tr>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                      <div class="flex items-center">
-                        <div class="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500">
-                          <span class="text-sm font-medium">
-                            ${currentUser.username.substring(0, 2).toUpperCase()}
-                          </span>
-                        </div>
-                        <div class="ml-4">
-                          <div class="text-sm font-medium text-gray-900">${currentUser.username}</div>
-                          <div class="text-sm text-gray-500">Current User</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                      <div class="text-sm text-gray-900">${currencySymbol}${currentUser.balance}</div>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                      <div class="text-sm text-gray-900">${currencySymbol}${currentUser.bonus}</div>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                      <div class="text-sm text-gray-900">${currencySymbol}${currentUser.completedWithdrawal}</div>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <button class="text-indigo-600 hover:text-indigo-900 mr-2">
-                        Currently Editing
-                      </button>
-                    </td>
-                  </tr>
+                <tbody class="bg-gray-800 divide-y divide-gray-700">
+                  ${users.map(user => {
+                    const userCurrencySymbol = currencySymbols[user.currency] || '$';
+                    return `
+                      <tr class="${user.username === selectedUser.username ? 'bg-gray-700' : ''}">
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <div class="flex items-center">
+                            <div class="h-10 w-10 rounded-full bg-gray-600 flex items-center justify-center text-gray-300">
+                              <span class="text-sm font-medium">
+                                ${user.username.substring(0, 2).toUpperCase()}
+                              </span>
+                            </div>
+                            <div class="ml-4">
+                              <div class="text-sm font-medium text-white">${user.username}</div>
+                              <div class="text-sm text-gray-400">${user.isAdmin ? 'Admin' : 'User'}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <div class="text-sm text-gray-300">${userCurrencySymbol}${user.balance}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <div class="text-sm text-gray-300">${userCurrencySymbol}${user.bonus}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <div class="text-sm text-gray-300">${userCurrencySymbol}${user.completedWithdrawal}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          ${user.username === selectedUser.username 
+                            ? `<span class="px-2 py-1 bg-blue-900 text-blue-200 rounded-full text-xs">Currently Editing</span>` 
+                            : `<button data-username="${user.username}" class="edit-user-btn text-blue-400 hover:text-blue-300 mr-2">
+                                Edit
+                              </button>`
+                          }
+                        </td>
+                      </tr>
+                    `;
+                  }).join('')}
                 </tbody>
               </table>
             </div>
@@ -426,11 +426,11 @@
 
     function renderFooter() {
       const footer = document.createElement('footer');
-      footer.className = 'bg-white py-4 mt-auto';
+      footer.className = 'bg-gray-900 py-4 mt-auto border-t border-gray-800';
       
       footer.innerHTML = `
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <p class="text-center text-sm text-gray-500">
+          <p class="text-center text-sm text-gray-300">
             © ${new Date().getFullYear()} Financial Dashboard. All rights reserved.
           </p>
         </div>
@@ -441,71 +441,71 @@
 
     function renderLoginForm() {
       const main = document.createElement('div');
-      main.className = 'min-h-screen flex items-center justify-center bg-gray-100 px-4';
+      main.className = 'min-h-screen flex items-center justify-center bg-black px-4';
       
       main.innerHTML = `
-        <div class="w-full max-w-md bg-white rounded-lg shadow-md overflow-hidden">
-          <div class="px-6 py-4 bg-gray-50 border-b">
-            <h2 id="form-title" class="text-2xl font-bold text-center text-gray-800">
+        <div class="w-full max-w-md bg-gray-900 rounded-lg shadow-md overflow-hidden border border-gray-800">
+          <div class="px-6 py-4 bg-gray-800 border-b border-gray-700">
+            <h2 id="form-title" class="text-2xl font-bold text-center text-white">
               Login to Dashboard
             </h2>
           </div>
           <div class="p-6">
             <form id="auth-form" class="space-y-4">
               <div class="space-y-2">
-                <label for="username" class="block text-sm font-medium text-gray-700">Username</label>
+                <label for="username" class="block text-sm font-medium text-gray-200">Username</label>
                 <input
                   id="username"
                   type="text"
                   placeholder="Enter your username"
-                  class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"
+                  class="block w-full px-3 py-2 border border-gray-600 bg-gray-800 text-white rounded-md shadow-sm"
                   required
                 />
               </div>
               <div class="space-y-2">
-                <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
+                <label for="password" class="block text-sm font-medium text-gray-200">Password</label>
                 <input
                   id="password"
                   type="password"
                   placeholder="Enter your password"
-                  class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"
+                  class="block w-full px-3 py-2 border border-gray-600 bg-gray-800 text-white rounded-md shadow-sm"
                   required
                 />
               </div>
               
               <div id="register-fields" class="hidden space-y-4">
                 <div class="space-y-2">
-                  <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
+                  <label for="email" class="block text-sm font-medium text-gray-200">Email</label>
                   <input
                     id="email"
                     type="email"
                     placeholder="Enter your email"
-                    class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"
+                    class="block w-full px-3 py-2 border border-gray-600 bg-gray-800 text-white rounded-md shadow-sm"
                   />
                 </div>
                 <div class="space-y-2">
-                  <label for="fullName" class="block text-sm font-medium text-gray-700">Full Name</label>
+                  <label for="fullName" class="block text-sm font-medium text-gray-200">Full Name</label>
                   <input
                     id="fullName"
                     type="text"
                     placeholder="Enter your full name"
-                    class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"
+                    class="block w-full px-3 py-2 border border-gray-600 bg-gray-800 text-white rounded-md shadow-sm"
                   />
                 </div>
                 <div class="space-y-2">
-                  <label for="phoneNumber" class="block text-sm font-medium text-gray-700">Phone Number</label>
+                  <label for="phoneNumber" class="block text-sm font-medium text-gray-200">Phone Number</label>
                   <input
                     id="phoneNumber"
                     type="tel"
                     placeholder="Enter your phone number"
-                    class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"
+                    class="block w-full px-3 py-2 border border-gray-600 bg-gray-800 text-white rounded-md shadow-sm"
                   />
                 </div>
                 <div class="space-y-2">
-                  <label for="currency" class="block text-sm font-medium text-gray-700">Preferred Currency</label>
+                  <label for="currency" class="block text-sm font-medium text-gray-200">Preferred Currency</label>
                   <select
                     id="currency"
-                    class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"
+                    class="block w-full px-3 py-2 border border-gray-600 bg-gray-800 text-white rounded-md shadow-sm"
                   >
                     ${Object.entries(currencySymbols).map(([code, symbol]) => 
                       `<option value="${code}">${code} (${symbol})</option>`
@@ -526,15 +526,13 @@
               <button
                 type="button"
                 id="toggle-form"
-                class="text-sm text-blue-600 hover:underline"
+                class="text-sm text-blue-400 hover:text-blue-300"
               >
                 Don't have an account? Register
               </button>
             </div>
-            <div class="mt-6 text-center text-sm text-gray-500">
-              <p>For demo purposes:</p>
-              <p>Username: admin, Password: admin123</p>
-              <p>Username: user, Password: user123</p>
+            <div class="mt-6 text-center text-sm text-gray-400">
+             
             </div>
           </div>
         </div>
@@ -574,6 +572,22 @@
       
       if (isAdminMode) {
         document.getElementById('save-changes-btn').addEventListener('click', handleSaveChanges);
+        
+        // Add click event for all edit user buttons
+        const editButtons = document.querySelectorAll('.edit-user-btn');
+        editButtons.forEach(button => {
+          button.addEventListener('click', () => {
+            const username = button.getAttribute('data-username');
+            const users = JSON.parse(localStorage.getItem('demoUsers'));
+            const selectedUser = users.find(u => u.username === username);
+            
+            if (selectedUser) {
+              window.selectedUser = selectedUser;
+              renderDashboard();
+              showToast(`Now editing ${username}'s information`);
+            }
+          });
+        });
       }
     }
 
@@ -663,7 +677,8 @@
         isAdmin: false,
         balanceUpdated: "Never",
         bonusUpdated: "Never",
-        withdrawalUpdated: "Never"
+        withdrawalUpdated: "Never",
+        activities: [] // Initialize with empty activities
       };
       
       users.push(newUser);
@@ -690,6 +705,7 @@
     }
 
     function handleSaveChanges() {
+      const username = document.getElementById('edit-username').value;
       const balance = document.getElementById('edit-balance').value;
       const bonus = document.getElementById('edit-bonus').value;
       const withdrawal = document.getElementById('edit-withdrawal').value;
@@ -700,23 +716,82 @@
         return;
       }
       
+      // Get the user to be updated
+      const users = JSON.parse(localStorage.getItem('demoUsers'));
+      const userToUpdate = users.find(u => u.username === username);
+      
+      if (!userToUpdate) {
+        showToast('User not found. Please try again.', 5000);
+        return;
+      }
+      
+      // Track activity
+      const now = new Date();
+      const timeString = "Just now";
+      const currencySymbol = currencySymbols[userToUpdate.currency] || '$';
+      
+      const activities = userToUpdate.activities || [];
+      const newActivities = [];
+      
+      // Check if values changed and add activity entry
+      if (parseFloat(userToUpdate.balance) !== parseFloat(balance)) {
+        const diff = parseFloat(balance) - parseFloat(userToUpdate.balance);
+        const prefix = diff >= 0 ? '+' : '';
+        newActivities.push({
+          type: 'balance',
+          description: 'Balance Updated',
+          time: timeString,
+          amount: `${prefix}${currencySymbol}${Math.abs(diff).toFixed(2)}`
+        });
+      }
+      
+      if (parseFloat(userToUpdate.bonus) !== parseFloat(bonus)) {
+        const diff = parseFloat(bonus) - parseFloat(userToUpdate.bonus);
+        const prefix = diff >= 0 ? '+' : '';
+        newActivities.push({
+          type: 'bonus',
+          description: 'Bonus Updated',
+          time: timeString,
+          amount: `${prefix}${currencySymbol}${Math.abs(diff).toFixed(2)}`
+        });
+      }
+      
+      if (parseFloat(userToUpdate.completedWithdrawal) !== parseFloat(withdrawal)) {
+        const diff = parseFloat(withdrawal) - parseFloat(userToUpdate.completedWithdrawal);
+        newActivities.push({
+          type: 'withdrawal',
+          description: 'Withdrawal Processed',
+          time: timeString,
+          amount: `${currencySymbol}${Math.abs(diff).toFixed(2)}`
+        });
+      }
+      
       // Update user data
       const updatedUser = {
-        ...currentUser,
+        ...userToUpdate,
         balance,
         bonus,
         completedWithdrawal: withdrawal,
-        balanceUpdated: "Just now",
-        bonusUpdated: "Just now",
-        withdrawalUpdated: "Just now"
+        balanceUpdated: timeString,
+        bonusUpdated: timeString,
+        withdrawalUpdated: timeString,
+        activities: [...newActivities, ...activities]
       };
       
-      if (updateUserData(updatedUser)) {
-        showToast('Changes saved successfully!');
-        renderDashboard();
+      // Update the user in users array and save
+      const updatedUsers = users.map(u => u.username === username ? updatedUser : u);
+      localStorage.setItem('demoUsers', JSON.stringify(updatedUsers));
+      
+      // If the updated user is the current user, update currentUser
+      if (username === currentUser.username) {
+        currentUser = updatedUser;
       } else {
-        showToast('Failed to update user data. Please try again.', 5000);
+        // Keep the selected user reference for the admin
+        window.selectedUser = updatedUser;
       }
+      
+      showToast('Changes saved successfully!');
+      renderDashboard();
     }
 
     // Initialize app
@@ -730,75 +805,5 @@
       }
     });
   </script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-    // Initialize Supabase
-    const SUPABASE_URL = "https://gnxjkwtjwicrshhnavwy.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdueGprd3Rqd2ljcnNoaG5hdnd5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI5NTMzNjEsImV4cCI6MjA1ODUyOTM2MX0.NooibfJjqVPBEQV--xIqMvtaD9zLEgfsNVdVZWyclwY"; // Replace with your actual anon key
-
-    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-    // Replace with the actual user ID
-    const userId = "USER_ID_HERE"; // Fetch dynamically if needed
-
-    async function fetchUserData() {
-        let { data, error } = await supabase
-            .from("clients") // Replace "clients" with your actual table
-            .select("balance, bonus, completed_withdrawals")
-            .eq("id", userId)
-            .single();
-
-        if (error) {
-            console.error("Error fetching user data:", error);
-            return;
-        }
-
-        document.getElementById("balance").innerText = `$${data.balance}`;
-        document.getElementById("bonus").innerText = `$${data.bonus}`;
-        document.getElementById("withdrawals").innerText = data.completed_withdrawals;
-    }
-
-    async function updateBalance(amount) {
-        let { error } = await supabase
-            .from("clients")
-            .update({ balance: supabase.raw("balance + ?", [amount]) })
-            .eq("id", userId);
-
-        if (error) {
-            console.error("Error updating balance:", error);
-            return;
-        }
-        fetchUserData();
-    }
-
-    async function updateBonus(amount) {
-        let { error } = await supabase
-            .from("clients")
-            .update({ bonus: supabase.raw("bonus + ?", [amount]) })
-            .eq("id", userId);
-
-        if (error) {
-            console.error("Error updating bonus:", error);
-            return;
-        }
-        fetchUserData();
-    }
-
-    async function markWithdrawalComplete() {
-        let { error } = await supabase
-            .from("clients")
-            .update({ completed_withdrawals: supabase.raw("completed_withdrawals + 1") })
-            .eq("id", userId);
-
-        if (error) {
-            console.error("Error updating withdrawals:", error);
-            return;
-        }
-        fetchUserData();
-    }
-
-    // Load user data when the page loads
-    fetchUserData();
-</script>
 </body>
 </html>
